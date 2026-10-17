@@ -8,7 +8,6 @@
 <link rel="license" href="https://creativecommons.org/licenses/by/4.0/">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)} body{margin:0} img{max-width:100%} [hidden]{display:none!important}</style>
 <title>Incidentenkaart Amsterdam Nieuw-West Maandoverzicht</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: grote verschuifbare stratenkaart bovenaan, verantwoording en incidentenlijst eronder. Zelfde huisstijl als de Incidentenkaart. */
@@ -46,9 +45,19 @@ body {
 header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 24px; border-bottom: 2px solid var(--ink); padding-bottom: 10px; }
 h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(26px, 4vw, 38px); line-height: 1.05; margin: 0; text-wrap: balance; }
 .meta { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.meta a { color: var(--focus); text-decoration: underline; text-underline-offset: 2px; }
 .mapbox { position: relative; border: 1px solid var(--rule); background: var(--land); height: min(78vh, 760px); min-height: 420px; overflow: hidden; touch-action: none; }
 canvas { display: block; width: 100%; height: 100%; cursor: grab; }
 canvas.drag { cursor: grabbing; }
+.mapbox.locked { touch-action: pan-y; }
+.mapbox.locked canvas { cursor: default; }
+.lock { position: absolute; left: 50%; bottom: 34px; transform: translateX(-50%); width: max-content; max-width: calc(100% - 20px); font: 600 13px var(--f-body); color: var(--paper); background: var(--ink); border: 1px solid var(--ink); border-radius: 999px; padding: 9px 16px; cursor: pointer; box-shadow: 0 2px 8px rgb(0 0 0 / .18); }
+.mapbox:not(.locked) .lock { color: var(--ink); background: var(--card); border-color: var(--rule); }
+.jump { display: none; }
+@media (max-width: 700px) {
+  .mapbox { height: 56vh; min-height: 300px; }
+  .jump { display: inline-flex; align-items: center; gap: 6px; justify-self: start; font-size: 13.5px; font-weight: 600; color: var(--focus); text-decoration: underline; text-underline-offset: 3px; }
+}
 .ctrl { position: absolute; top: 10px; right: 10px; display: grid; gap: 6px; }
 .ctrl button, .chip { font: 600 15px var(--f-body); color: var(--ink); background: var(--card); border: 1px solid var(--rule); cursor: pointer; }
 .ctrl button { width: 36px; height: 36px; border-radius: 6px; }
@@ -58,17 +67,21 @@ canvas.drag { cursor: grabbing; }
 button:focus-visible, .item:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .filters { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { font-weight: 500; font-size: 13px; border-radius: 999px; padding: 5px 12px 5px 9px; display: inline-flex; align-items: center; gap: 7px; }
-.chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); }
+.chip .dot { width: 20px; height: 20px; border-radius: 50%; background: var(--c); display: grid; place-items: center; }
+.chip .dot svg { width: 13px; height: 13px; fill: #fff; }
 .chip .n { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
 .chip[aria-pressed="false"] { opacity: .45; }
 .chip[aria-pressed="false"] .dot { background: transparent; box-shadow: inset 0 0 0 2px var(--c); }
+.chip[aria-pressed="false"] .dot svg { fill: var(--c); }
 .disclaimer { border-left: 3px solid var(--ink); background: var(--card); padding: 12px 16px; font-size: 13.5px; max-width: 78ch; }
 .disclaimer strong { font-family: var(--f-display); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 12px; display: block; margin-bottom: 4px; color: var(--muted); }
 .disclaimer p { margin: 0 0 6px; } .disclaimer p:last-child { margin-bottom: 0; }
 .list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 0 24px; border-top: 1px solid var(--rule); }
-.item { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; padding: 11px 6px 11px 0; border-bottom: 1px solid var(--rule); cursor: pointer; }
+.item { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; padding: 11px 6px 11px 0; border-bottom: 1px solid var(--rule); cursor: pointer; }
 .item.active { background: var(--card); }
-.num { width: 24px; height: 24px; border-radius: 50%; background: var(--c); color: #fff; font: 600 11px var(--f-mono); display: grid; place-items: center; }
+.num { position: relative; width: 30px; height: 30px; border-radius: 50%; background: var(--c); display: grid; place-items: center; }
+.num svg { width: 18px; height: 18px; fill: #fff; }
+.num b { position: absolute; top: -5px; right: -6px; min-width: 16px; height: 16px; padding: 0 3px; border-radius: 8px; background: var(--card); color: var(--ink); border: 1px solid var(--rule); font: 700 10px/14px var(--f-mono); text-align: center; }
 .item h3 { margin: 0; font: 600 14.5px/1.35 var(--f-body); }
 .row { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12.5px; color: var(--muted); margin-top: 3px; }
 .row .date { font-family: var(--f-mono); } .row .type { color: var(--c); font-weight: 600; }
@@ -83,13 +96,15 @@ h2 { font: 700 13px var(--f-display); letter-spacing: .12em; text-transform: upp
 <div class="wrap">
   <header>
     <h1>Incidentenkaart Amsterdam Nieuw-West Maandoverzicht</h1>
-    <div class="meta">Bron: 2026 Nieuw-West incidentenoverzicht · stand 16 okt 2026</div>
+    <div class="meta">Bron: <a href="https://docs.google.com/spreadsheets/d/1Z8NfyyHYIvVUqyJep-49mByrJ4ChLVmeJGU2QyHfuQU/edit?gid=97516561" target="_blank" rel="noopener">2026 Nieuw-West incidentenoverzicht</a> · stand 17 okt 2026</div>
   </header>
 
   <div class="filters" id="filters" role="group" aria-label="Filter op type"></div>
 
+  <a class="jump" href="#incidenten">Lijst met incidenten en verantwoording staan onder de kaart ↓</a>
+
   <div class="mapbox" id="mapbox">
-    <canvas id="cv" aria-label="Verschuifbare stratenkaart van Nieuw-West met genummerde incidenten" role="img"></canvas>
+    <canvas id="cv" aria-label="Verschuifbare stratenkaart van Nieuw-West met pulserende, genummerde incidenten met een icoon per type" role="img"></canvas>
     <div class="ctrl">
       <button id="zin" type="button" aria-label="Inzoomen">+</button>
       <button id="zout" type="button" aria-label="Uitzoomen">−</button>
@@ -97,9 +112,10 @@ h2 { font: 700 13px var(--f-display); letter-spacing: .12em; text-transform: upp
     </div>
     <div class="hint" id="hint">Zoom in (scrollen, knijpen of +) om straatnamen te zien. Klik op een incident in de lijst om ernaartoe te gaan.</div>
     <div class="attr">© OpenStreetMap-bijdragers</div>
+    <button id="lock" class="lock" type="button" hidden></button>
   </div>
 
-  <h2>Incidenten</h2>
+  <h2 id="incidenten">Incidenten</h2>
   <div class="list" id="list"></div>
   <section class="disclaimer" aria-label="Verantwoording">
     <strong>Verantwoording</strong>
@@ -108,7 +124,7 @@ h2 { font: 700 13px var(--f-display); letter-spacing: .12em; text-transform: upp
   </section>
 
   <footer class="colofon">
-    <div>Dataset en pagina gemaakt door <b>Maikel van Leeuwen</b>.</div>
+    <div>Dataset en pagina gemaakt door <b>Maikel van Leeuwen</b>. De volledige dataset staat openbaar in de Google Sheet <a href="https://docs.google.com/spreadsheets/d/1Z8NfyyHYIvVUqyJep-49mByrJ4ChLVmeJGU2QyHfuQU/edit?gid=97516561" target="_blank" rel="noopener">2026 Nieuw-West incidentenoverzicht</a>.</div>
     <div>Gepubliceerd onder <a href="https://creativecommons.org/licenses/by/4.0/deed.nl" target="_blank" rel="noopener">Creative Commons Naamsvermelding 4.0 Internationaal (CC BY 4.0)</a>: vrij te gebruiken, delen en bewerken, ook door AI, mits met naamsvermelding.</div>
     <div>Stratenkaart © OpenStreetMap-bijdragers, onder de Open Database License (ODbL). De gelinkte nieuwsberichten vallen onder het auteursrecht van de betreffende media.</div>
   </footer>
@@ -128,6 +144,18 @@ const INC = [
   { d: "2026-10-14", t: "Gerbrandypark afgezet voor politiezoekactie in lopend onderzoek", type: "Politie-inzet", adres: "Gerbrandypark", straat: "", wijk: "Slotermeer", lat: 52.3778, lon: 4.8313, src: "AT5", url: "https://www.at5.nl/artikelen/240441/gerbrandypark-volledig-afgezet-voor-zoekactie-van-politie" },
   { d: "2026-10-16", t: "Brand in parkeergarage onder woonblok, 55 woningen ontruimd; 26-jarige man aangehouden", type: "Brand", adres: "Theodoor van Hoytemastraat", straat: "Theodoor van Hoytemastraat", wijk: "Slotervaart", lat: 52.3605, lon: 4.8390, src: "AT5", url: "https://www.at5.nl/artikelen/240484/relationeel-conflict-mogelijk-aanleiding-voor-brand-in-garage-nieuw-west-26-jarige-man-aangehouden" }
 ];
+
+// Iconen per type (24×24, wit gevuld op de gekleurde marker)
+const burst = (() => { let p = ""; for (let k = 0; k < 16; k++) { const a = k * Math.PI / 8 - Math.PI / 2, R = k % 2 ? 4.6 : (k % 4 ? 9 : 11); p += (k ? "L" : "M") + (12 + R * Math.cos(a)).toFixed(2) + " " + (12 + R * Math.sin(a)).toFixed(2); } return p + "Z"; })();
+const ICON = {
+  "Beschieting/Explosie": burst,
+  "Explosief": "M10 8a7 7 0 1 0 .01 0Z M12.6 9.2l3.3-3.3 2.4 2.4-3.3 3.3Z M19.6 1.6l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7Z",
+  "Brand": "M12 1.5c.6 3.7 6.5 6.4 6.5 12.4a6.5 6.5 0 0 1-13 0c0-3 1.6-5.1 3.4-6.5-.1 2.2.8 3.6 2.2 4.1-.6-3.6.1-7.1.9-10Z",
+  "Steekpartij": "M21.5 2.5c-1 4.8-5.6 9.9-9.4 12.7l-3.3-3.3C11.6 8.1 16.7 3.5 21.5 2.5Z M8.1 12.6l3.3 3.3-1.6 1.6-.9-.9-4.6 4.6-2.4-2.4 4.6-4.6-.9-.9Z",
+  "Politie-inzet": "M7 18v-5.5a5 5 0 0 1 10 0V18Z M4.5 19h15v3h-15Z M11 1.5h2v3.5h-2Z M3.2 5.6l1.4-1.4 2.5 2.5-1.4 1.4Z M19.4 4.2l1.4 1.4-2.5 2.5-1.4-1.4Z"
+};
+const P2D = {}; for (const k in ICON) P2D[k] = new Path2D(ICON[k]);
+const svgIcon = t => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${ICON[t] || ""}"/></svg>`;
 
 // Projectie gelijk aan de voorbereide OSM-data (wereldcoördinaten 0..1800 breed)
 const LON0 = 4.750, LON1 = 4.855, LAT1 = 52.403, K = Math.cos(52.364 * Math.PI / 180), WW = 1800, S = WW / ((LON1 - LON0) * K);
@@ -156,7 +184,9 @@ for (const r of ROADS) {
 const segList = Object.entries(labelSegs).map(([name, s]) => ({ name, ...s }))
   .sort((a, b) => { const pr = s => incStreets.has(s.name) ? 0 : (s.cls !== "r" ? 1 : 2); return pr(a) - pr(b) || b.L - a.L; });
 
-const cv = document.getElementById("cv"), ctx = cv.getContext("2d"), box = document.getElementById("mapbox");
+const cv = document.getElementById("cv"), out = cv.getContext("2d"), box = document.getElementById("mapbox");
+const base = document.createElement("canvas"); let ctx = base.getContext("2d");
+const still = matchMedia("(prefers-reduced-motion: reduce)");
 let view = { s: 1, x: 0, y: 0 }, dpr = 1, W = 0, H = 0;
 const active = new Set(Object.keys(TYPES));
 let selected = -1;
@@ -164,7 +194,7 @@ const col = n => getComputedStyle(document.documentElement).getPropertyValue(n).
 let C = {};
 const readColors = () => { C = {}; ["--land","--water","--road","--road-edge","--road-major","--road-major-edge","--motorway","--label","--label-halo","--hl","--card","--ink", ...Object.values(TYPES)].forEach(k => C[k] = col(k)); };
 
-function resize() { dpr = window.devicePixelRatio || 1; W = box.clientWidth; H = box.clientHeight; cv.width = W * dpr; cv.height = H * dpr; draw(); }
+function resize() { dpr = window.devicePixelRatio || 1; W = box.clientWidth; H = box.clientHeight; cv.width = base.width = W * dpr; cv.height = base.height = H * dpr; draw(); }
 function fit() { const pad = 20, ww = WW, hh = (LAT1 - 52.324) * S; view.s = Math.min((W - pad * 2) / ww, (H - pad * 2) / hh); view.x = (W - ww * view.s) / 2; view.y = (H - hh * view.s) / 2; draw(); }
 const sx = x => x * view.s + view.x, sy = y => y * view.s + view.y;
 
@@ -194,8 +224,16 @@ function draw() {
   ctx.globalAlpha = 0.85; strokeRoads(r => incStreets.has(r.name) && INC.some(i => i.straat === r.name && active.has(i.type)), Math.max(wMinor, 2.5) + 1.5, C["--hl"]); ctx.globalAlpha = 1;
   strokeRoads(r => incStreets.has(r.name) && INC.some(i => i.straat === r.name && active.has(i.type)), Math.max(wMinor, 2.5), C["--road"]);
   drawLabels(mPx);
-  drawMarkers();
+  frame(performance.now());
 }
+// elk frame: ondergrond kopiëren en de markers met pulsering erover tekenen
+function frame(t) {
+  if (!W) return;
+  out.setTransform(1, 0, 0, 1, 0, 0); out.drawImage(base, 0, 0);
+  out.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawMarkers(out, still.matches ? null : t);
+}
+function loop(t) { frame(t); if (!still.matches) requestAnimationFrame(loop); }
 function drawLabels(mPx) {
   const boxes = [];
   const showMinor = mPx > 0.55, showMajor = mPx > 0.22;
@@ -223,15 +261,34 @@ function drawLabels(mPx) {
     ctx.restore();
   }
 }
-function drawMarkers() {
-  INC.forEach((it, i) => {
-    if (!active.has(it.type)) return;
+function drawMarkers(g, t) {
+  const order = INC.map((_, i) => i).filter(i => active.has(INC[i].type));
+  if (selected >= 0 && active.has(INC[selected].type)) { order.splice(order.indexOf(selected), 1); order.push(selected); }
+  order.forEach((i, n) => {
+    const it = INC[i];
     const [wx, wy] = proj(it.lon, it.lat); const x = sx(wx), y = sy(wy);
-    const c = C[TYPES[it.type]] || C["--t-overig"]; const r = selected === i ? 15 : 12;
-    ctx.globalAlpha = 0.22; ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r + 9, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fillStyle = c; ctx.fill();
-    ctx.lineWidth = selected === i ? 3 : 2; ctx.strokeStyle = selected === i ? C["--ink"] : C["--card"]; ctx.stroke();
-    ctx.fillStyle = "#fff"; ctx.font = `700 ${selected === i ? 14 : 12}px "IBM Plex Mono", monospace`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(i + 1, x, y + 0.5);
+    if (x < -60 || y < -60 || x > W + 60 || y > H + 60) return;
+    const c = C[TYPES[it.type]] || C["--t-overig"], sel = selected === i, r = sel ? 17 : 14;
+    g.fillStyle = c; g.strokeStyle = c;
+    if (t == null) { g.globalAlpha = 0.22; g.beginPath(); g.arc(x, y, r + 8, 0, 7); g.fill(); }
+    else {
+      // twee golven per marker, onderling verschoven zodat ze niet tegelijk kloppen
+      const period = sel ? 1300 : 2000;
+      for (const off of [0, 0.5]) {
+        const ph = ((t / period) + i * 0.17 + off) % 1, ease = 1 - Math.pow(1 - ph, 2);
+        g.globalAlpha = 0.38 * (1 - ph); g.beginPath(); g.arc(x, y, r + ease * (sel ? 30 : 22), 0, 7); g.fill();
+      }
+      g.globalAlpha = 0.55 * (1 - ((t / 2000 + i * 0.17) % 1)); g.lineWidth = 2; g.beginPath(); g.arc(x, y, r + 3 + ((t / 2000 + i * 0.17) % 1) * 18, 0, 7); g.stroke();
+    }
+    g.globalAlpha = 1;
+    g.beginPath(); g.arc(x, y, r, 0, 7); g.fillStyle = c; g.fill();
+    g.lineWidth = sel ? 3 : 2; g.strokeStyle = sel ? C["--ink"] : C["--card"]; g.stroke();
+    const p = P2D[it.type];
+    if (p) { const sz = r * 1.25; g.save(); g.translate(x - sz / 2, y - sz / 2); g.scale(sz / 24, sz / 24); g.fillStyle = "#fff"; g.fill(p); g.restore(); }
+    // nummerlabel rechtsboven, gekoppeld aan de lijst
+    const bx = x + r * 0.78, by = y - r * 0.78, br = sel ? 9 : 8;
+    g.beginPath(); g.arc(bx, by, br, 0, 7); g.fillStyle = C["--card"]; g.fill(); g.lineWidth = 1.2; g.strokeStyle = C["--ink"]; g.stroke();
+    g.fillStyle = C["--ink"]; g.font = `700 ${sel ? 11 : 10}px "IBM Plex Mono", monospace`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(i + 1, bx, by + 0.5);
   });
 }
 
@@ -239,21 +296,28 @@ function drawMarkers() {
 const pointers = new Map(); let pinch0 = null, moved = 0;
 function zoomAt(f, cx, cy) { const ns = Math.max(0.25, Math.min(40, view.s * f)); f = ns / view.s; view.x = cx - (cx - view.x) * f; view.y = cy - (cy - view.y) * f; view.s = ns; draw(); hideHint(); }
 cv.addEventListener("wheel", e => { e.preventDefault(); const r = cv.getBoundingClientRect(); zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top); }, { passive: false });
-cv.addEventListener("pointerdown", e => { cv.setPointerCapture(e.pointerId); pointers.set(e.pointerId, [e.clientX, e.clientY]); moved = 0; cv.classList.add("drag"); if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinch0 = { d: Math.hypot(a[0] - b[0], a[1] - b[1]) }; } });
+cv.addEventListener("pointerdown", e => { if (locked) { pointers.set(e.pointerId, [e.clientX, e.clientY]); moved = 0; return; } cv.setPointerCapture(e.pointerId); pointers.set(e.pointerId, [e.clientX, e.clientY]); moved = 0; cv.classList.add("drag"); if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinch0 = { d: Math.hypot(a[0] - b[0], a[1] - b[1]) }; } });
 cv.addEventListener("pointermove", e => {
   if (!pointers.has(e.pointerId)) return; const prev = pointers.get(e.pointerId); pointers.set(e.pointerId, [e.clientX, e.clientY]);
+  if (locked) { moved += Math.abs(e.clientX - prev[0]) + Math.abs(e.clientY - prev[1]); return; }
   if (pointers.size === 1) { view.x += e.clientX - prev[0]; view.y += e.clientY - prev[1]; moved += Math.abs(e.clientX - prev[0]) + Math.abs(e.clientY - prev[1]); draw(); }
   else if (pointers.size === 2 && pinch0) { const [a, b] = [...pointers.values()]; const d = Math.hypot(a[0] - b[0], a[1] - b[1]); const r = cv.getBoundingClientRect(); zoomAt(d / pinch0.d, (a[0] + b[0]) / 2 - r.left, (a[1] + b[1]) / 2 - r.top); pinch0.d = d; moved += 10; }
 });
-const up = e => { pointers.delete(e.pointerId); if (pointers.size < 2) pinch0 = null; if (!pointers.size) cv.classList.remove("drag");
+const up = e => { if (!pointers.has(e.pointerId)) return; pointers.delete(e.pointerId); if (pointers.size < 2) pinch0 = null; if (!pointers.size) cv.classList.remove("drag");
   if (moved < 5 && e.type === "pointerup") { const r = cv.getBoundingClientRect(); const x = e.clientX - r.left, y = e.clientY - r.top;
-    let best = -1, bd = 22; INC.forEach((it, i) => { if (!active.has(it.type)) return; const [wx, wy] = proj(it.lon, it.lat); const d = Math.hypot(sx(wx) - x, sy(wy) - y); if (d < bd) { bd = d; best = i; } });
+    let best = -1, bd = 24; INC.forEach((it, i) => { if (!active.has(it.type)) return; const [wx, wy] = proj(it.lon, it.lat); const d = Math.hypot(sx(wx) - x, sy(wy) - y); if (d < bd) { bd = d; best = i; } });
     if (best >= 0) select(best, true, false); } };
 cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
 document.getElementById("zin").onclick = () => zoomAt(1.6, W / 2, H / 2);
 document.getElementById("zout").onclick = () => zoomAt(1 / 1.6, W / 2, H / 2);
 document.getElementById("zfit").onclick = () => { selected = -1; syncList(); fit(); };
 const hint = document.getElementById("hint"); let hintHidden = false; function hideHint() { if (!hintHidden) { hint.hidden = true; hintHidden = true; } }
+// Op touchscreens staat de kaart eerst vast, zodat je met één vinger gewoon langs de kaart naar de lijst scrolt.
+const lockBtn = document.getElementById("lock");
+let locked = false;
+function setLock(v) { locked = v; box.classList.toggle("locked", v); lockBtn.textContent = v ? "Tik om de kaart te verschuiven en te zoomen" : "Klaar, terug naar scrollen"; lockBtn.setAttribute("aria-pressed", String(!v)); }
+if (matchMedia("(pointer: coarse)").matches) { lockBtn.hidden = false; hideHint(); setLock(true); }
+lockBtn.addEventListener("click", () => setLock(!locked));
 
 function flyTo(i) { const [wx, wy] = proj(INC[i].lon, INC[i].lat); const target = Math.max(view.s, 6); view.s = target; view.x = W / 2 - wx * target; view.y = H / 2 - wy * target; draw(); hideHint(); }
 function syncList() { items.forEach((m, j) => m.classList.toggle("active", j === selected)); }
@@ -264,7 +328,7 @@ const list = document.getElementById("list"), items = [];
 const fmt = d => new Date(d + "T12:00:00").toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" });
 INC.forEach((it, i) => {
   const d = document.createElement("div"); d.className = "item"; d.tabIndex = 0; d.style.setProperty("--c", colorOf(it.type));
-  d.innerHTML = `<div class="num">${i + 1}</div><div style="min-width:0"><h3></h3><div class="row"><span class="date">${fmt(it.d)}</span><span class="type"></span><span class="loc"></span></div><a target="_blank" rel="noopener"></a></div>`;
+  d.innerHTML = `<div class="num">${svgIcon(it.type)}<b>${i + 1}</b></div><div style="min-width:0"><h3></h3><div class="row"><span class="date">${fmt(it.d)}</span><span class="type"></span><span class="loc"></span></div><a target="_blank" rel="noopener"></a></div>`;
   d.querySelector("h3").textContent = it.t; d.querySelector(".type").textContent = it.type; d.querySelector(".loc").textContent = `${it.adres} · ${it.wijk}`;
   const a = d.querySelector("a"); a.href = it.url; a.textContent = `Bron: ${it.src}`; a.addEventListener("click", e => e.stopPropagation());
   d.addEventListener("click", () => select(i, false, true)); d.addEventListener("keydown", e => { if (e.key === "Enter") select(i, false, true); });
@@ -274,7 +338,7 @@ const counts = {}; INC.forEach(it => counts[it.type] = (counts[it.type] || 0) + 
 const filters = document.getElementById("filters");
 Object.keys(TYPES).filter(t => counts[t]).forEach(t => {
   const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.setAttribute("aria-pressed", "true"); b.style.setProperty("--c", colorOf(t));
-  b.innerHTML = `<span class="dot"></span><span></span><span class="n">${counts[t]}</span>`; b.children[1].textContent = t;
+  b.innerHTML = `<span class="dot">${svgIcon(t)}</span><span></span><span class="n">${counts[t]}</span>`; b.children[1].textContent = t;
   b.addEventListener("click", () => { active.has(t) ? active.delete(t) : active.add(t); b.setAttribute("aria-pressed", active.has(t)); INC.forEach((it, i) => items[i].hidden = !active.has(it.type)); draw(); });
   filters.appendChild(b);
 });
@@ -284,6 +348,8 @@ new ResizeObserver(() => { const first = !W; resize(); if (first) fit(); }).obse
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readColors(); draw(); });
 new MutationObserver(() => { readColors(); draw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 document.fonts && document.fonts.ready.then(draw);
+requestAnimationFrame(loop);
+still.addEventListener("change", () => { if (!still.matches) requestAnimationFrame(loop); else frame(); });
 </script>
 </body>
 </html>
