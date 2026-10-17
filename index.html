@@ -16,10 +16,25 @@
   --road-major: #f6e7b8; --road-major-edge: #c9b27a; --motorway: #f3c9a2; --label: #3b4137; --label-halo: #eceee7;
   --ink: #1f241d; --muted: #5d6458; --rule: #d3d6cc; --card: #fbfbf8; --focus: #1f5fbf; --hl: #1f241d;
   --t-explosie: #d2551f; --t-explosief: #8a3fb0; --t-brand: #b3122e; --t-steek: #0f7a6a; --t-politie: #2457c5; --t-overig: #6b6b6b;
-  color-scheme: light;
   --f-display: "IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
   --f-body: "IBM Plex Sans", "Segoe UI", Roboto, Arial, sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #171a16; --land: #1f231d; --water: #22384a; --road: #3a4036; --road-edge: #2a2f27;
+    --road-major: #5a5236; --road-major-edge: #3f3a28; --motorway: #6a4a33; --label: #cfd5c7; --label-halo: #1f231d;
+    --ink: #e8ebe3; --muted: #a3aa9b; --rule: #343a30; --card: #1d211b; --focus: #7aa7ff; --hl: #f2f4ee;
+    --t-explosie: #f07a44; --t-explosief: #b77ee0; --t-brand: #f0506b; --t-steek: #3cc2ad; --t-politie: #6f98ff; --t-overig: #a8a8a8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #171a16; --land: #1f231d; --water: #22384a; --road: #3a4036; --road-edge: #2a2f27;
+  --road-major: #5a5236; --road-major-edge: #3f3a28; --motorway: #6a4a33; --label: #cfd5c7; --label-halo: #1f231d;
+  --ink: #e8ebe3; --muted: #a3aa9b; --rule: #343a30; --card: #1d211b; --focus: #7aa7ff; --hl: #f2f4ee;
+  --t-explosie: #f07a44; --t-explosief: #b77ee0; --t-brand: #f0506b; --t-steek: #3cc2ad; --t-politie: #6f98ff; --t-overig: #a8a8a8;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body {
@@ -30,6 +45,17 @@ body {
 header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 8px 24px; border-bottom: 2px solid var(--ink); padding-bottom: 10px; }
 h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(26px, 4vw, 38px); line-height: 1.05; margin: 0; text-wrap: balance; }
 .meta { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+:root[data-mode="night"] {
+  --paper: #171a16; --land: #1f231d; --water: #22384a; --road: #3a4036; --road-edge: #2a2f27;
+  --road-major: #5a5236; --road-major-edge: #3f3a28; --motorway: #6a4a33; --label: #cfd5c7; --label-halo: #1f231d;
+  --ink: #e8ebe3; --muted: #a3aa9b; --rule: #343a30; --card: #1d211b; --focus: #7aa7ff; --hl: #f2f4ee;
+  --t-explosie: #f07a44; --t-explosief: #b77ee0; --t-brand: #f0506b; --t-steek: #3cc2ad; --t-politie: #6f98ff; --t-overig: #a8a8a8;
+  color-scheme: dark;
+}
+.headside { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.mode { font: 600 13px var(--f-body); color: var(--ink); background: var(--card); border: 1px solid var(--rule); border-radius: 999px; padding: 5px 12px 5px 9px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.mode svg { width: 16px; height: 16px; fill: currentColor; }
+.mode:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .meta a { color: var(--focus); text-decoration: underline; text-underline-offset: 2px; }
 .mapbox { position: relative; border: 1px solid var(--rule); background: var(--land); height: min(78vh, 760px); min-height: 420px; overflow: hidden; touch-action: none; }
 canvas { display: block; width: 100%; height: 100%; cursor: grab; }
@@ -81,7 +107,10 @@ h2 { font: 700 13px var(--f-display); letter-spacing: .12em; text-transform: upp
 <div class="wrap">
   <header>
     <h1>Incidentenkaart Amsterdam Nieuw-West Maandoverzicht</h1>
+    <div class="headside">
     <div class="meta">Bron: <a href="https://docs.google.com/spreadsheets/d/1Z8NfyyHYIvVUqyJep-49mByrJ4ChLVmeJGU2QyHfuQU/edit?gid=97516561" target="_blank" rel="noopener">2026 Nieuw-West incidentenoverzicht</a> · stand 17 okt 2026</div>
+      <button id="mode" class="mode" type="button"></button>
+    </div>
   </header>
 
   <div class="filters" id="filters" role="group" aria-label="Filter op type"></div>
@@ -331,7 +360,19 @@ Object.keys(TYPES).filter(t => counts[t]).forEach(t => {
 readColors();
 new ResizeObserver(() => { const first = !W; resize(); if (first) fit(); }).observe(box);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { readColors(); draw(); });
-new MutationObserver(() => { readColors(); draw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+new MutationObserver(() => { readColors(); draw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-mode"] });
+// Dag- en nachtmodus: standaard dag, keuze onthouden per bezoeker
+const modeBtn = document.getElementById("mode");
+const SUN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7a5 5 0 1 0 .01 0Z M11 1h2v3h-2Z M11 20h2v3h-2Z M1 11h3v2H1Z M20 11h3v2h-3Z M4.2 5.6l1.4-1.4 2.1 2.1-1.4 1.4Z M16.3 17.7l1.4-1.4 2.1 2.1-1.4 1.4Z M17.7 7.7l-1.4-1.4 2.1-2.1 1.4 1.4Z M5.6 19.8l-1.4-1.4 2.1-2.1 1.4 1.4Z"/></svg>';
+const MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4a8.5 8.5 0 1 0 11.5 11.5Z"/></svg>';
+function setMode(night, save) {
+  if (night) document.documentElement.setAttribute("data-mode", "night"); else document.documentElement.removeAttribute("data-mode");
+  modeBtn.innerHTML = night ? SUN + "<span>Dagmodus</span>" : MOON + "<span>Nachtmodus</span>";
+  if (save) { try { localStorage.setItem("kaart-modus", night ? "nacht" : "dag"); } catch (e) {} }
+}
+let startNight = false; try { startNight = localStorage.getItem("kaart-modus") === "nacht"; } catch (e) {}
+setMode(startNight, false);
+modeBtn.addEventListener("click", () => setMode(!document.documentElement.hasAttribute("data-mode"), true));
 document.fonts && document.fonts.ready.then(draw);
 requestAnimationFrame(loop);
 still.addEventListener("change", () => { if (!still.matches) requestAnimationFrame(loop); else frame(); });
